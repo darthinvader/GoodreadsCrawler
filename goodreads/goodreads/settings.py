@@ -89,8 +89,7 @@ LOG_LEVEL = 'INFO'
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
-# ITEM_PIPELINES = {
-#     'goodreads.pipelines.JsonWriterPipeline': 100,
-# }
-# JOBDIR = 'goodreads_save'
-# CONCURRENT_REQUESTS = 400
+ITEM_PIPELINES = {
+    'goodreads.pipelines.JsonWriterPipeline': 100,
+}
+JOBDIR = 'goodreads_save'
