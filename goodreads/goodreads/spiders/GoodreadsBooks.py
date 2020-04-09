@@ -6,27 +6,26 @@ from datetime import datetime, timezone
 
 
 class BookInformation(scrapy.Item):
-    Name = scrapy.Field()  # DONE
-    Author = scrapy.Field()  # DONE
-    Rating_count = scrapy.Field()  # DONE
-    Rating_score = scrapy.Field()  # DONE
-    Pages = scrapy.Field()  # DONE
-    url = scrapy.Field()  # DONE
-    Genres = scrapy.Field()  # DONE
-    Original_name = scrapy.Field()  # DONE
-    ISBN = scrapy.Field()  # DONE
-    ISBN13 = scrapy.Field()  # DONE
-    ASIN = scrapy.Field()  # DONE  # DONE
-    Format = scrapy.Field()  # DONE
-    Edition = scrapy.Field()  # DONE
-    First_Published = scrapy.Field()  # DONE
-    Edition_Published = scrapy.Field()
-    Edition_Publisher = scrapy.Field()
-    Edition_Language = scrapy.Field()  # DONE
-    Literary_Awards = scrapy.Field()  # DONE
-    Review_Count = scrapy.Field()  # DONE
-    Image_Url = scrapy.Field()  # DONE
-    Date_Time_Collected = scrapy.Field()  # DONE
+    Name = scrapy.Field()
+    Author = scrapy.Field()
+    Rating_count = scrapy.Field()
+    Rating_score = scrapy.Field()
+    Pages = scrapy.Field()
+    url = scrapy.Field()
+    Genres = scrapy.Field()
+    Original_name = scrapy.Field()
+    ISBN = scrapy.Field()
+    ISBN13 = scrapy.Field()
+    ASIN = scrapy.Field()
+    Format = scrapy.Field()
+    Edition = scrapy.Field()
+    First_Published_Date = scrapy.Field()
+    Edition_Publish_Info = scrapy.Field()
+    Edition_Language = scrapy.Field()
+    Literary_Awards = scrapy.Field()
+    Review_Count = scrapy.Field()
+    Image_Url = scrapy.Field()
+    Date_Time_Collected = scrapy.Field()
 
     def __lt__(self, other):
         # return self['pages'] < other['pages']
@@ -40,7 +39,7 @@ class BookInformation(scrapy.Item):
 class GoodreadsSpider(CrawlSpider):
     name = 'goodreads'
     allowed_domains = ['goodreads.com']
-    start_urls = ['https://www.goodreads.com/list/show/16997.Books_for_Intelligent_Teens']
+    start_urls = ['https://www.goodreads.com/list/popular_lists']
     rules = (
         Rule(LinkExtractor(allow=('/list/popular',))),
         Rule(LinkExtractor(allow=('/list/show/',),
@@ -84,7 +83,7 @@ class GoodreadsSpider(CrawlSpider):
         item['Author'] = author
 
         review_count = response.xpath('//meta[@itemprop="reviewCount"]//@content').get()
-        item['Review_Count'] = review_count
+        item['Review_Count'] = float(review_count)
 
         book_format = response.xpath('//span[@itemprop="bookFormat"]//text()').get()
         item['Format'] = book_format
@@ -95,23 +94,11 @@ class GoodreadsSpider(CrawlSpider):
         image_url = response.xpath('//img[@id="coverImage"]//@src').get()
         item['Image_Url'] = image_url
 
-        book_publishing_info = response.xpath('//div[@class="row"][contains(text(),"Published")]//text()').get()
-        # print(book_publishing_info)
-        first_published = response.xpath('//nobr[@class="greyText"]//text()').get()
-        if first_published:
-            first_published = first_published.strip()
-            first_published = re.compile('(?<=published )(.*)').search(first_published).group(1)[:-1]
-        else:
-            first_published = None
-        item['First_Published'] = first_published
+        edition_publish_info = self.edition_publishing_info_parse(response)
+        item['Edition_Publish_Info'] = edition_publish_info
 
-        if book_publishing_info:
-            book_info = book_publishing_info.splitlines()
-            edition_published = book_info[1].strip()
-            if not edition_published.startswith('Published'):
-                # print(edition_published)
-                edition_publisher = book_info[1].strip()
-
+        first_published = self.first_published_parse(response)
+        item['First_Published_Date'] = first_published
 
         [ISBN, ISBN13] = get_ISBNs(response)
         item['ISBN'] = ISBN
@@ -127,6 +114,21 @@ class GoodreadsSpider(CrawlSpider):
 
         return item
 
+    def edition_publishing_info_parse(self, response):
+        edition_publish_info = response.xpath('//div[@class="row"][contains(text(),"Published")]//text()').get()
+        if edition_publish_info:
+            edition_publish_info = re.sub('\\s+', ' ', edition_publish_info).strip()
+        return edition_publish_info
+
+    def first_published_parse(self, response):
+        first_published = response.xpath('//nobr[@class="greyText"]//text()').get()
+        if first_published:
+            first_published = first_published.strip()
+            first_published = re.compile('(?<=published )(.*)').search(first_published).group(1)[:-1]
+        else:
+            first_published = None
+        return first_published
+
 
 def pages_check(response):
     pages = response.xpath('//span[@itemprop="numberOfPages"]//text()').get()
@@ -140,8 +142,8 @@ def pages_check(response):
 
 
 def get_ISBNs(response):
-    ISBN = response.xpath('//div[contains(text(),"ISBN")]/parent::*[1]//div[2]//text()').get()
-    ISBN13 = response.xpath('//div[contains(text(),"ISBN")]/parent::*//span[@itemprop="isbn"]//text()').get()
+    ISBN = response.xpath('//div[contains(text(),"ISBN")]/parent::*//div[@class="infoBoxRowItem"]//text()').get()
+    ISBN13 = response.xpath('//span[@itemprop="isbn"]//text()').get()
     if ISBN:
         ISBN = ISBN.strip()
         if len(ISBN) == 9:
