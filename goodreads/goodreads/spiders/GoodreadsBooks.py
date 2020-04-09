@@ -104,7 +104,7 @@ class GoodreadsSpider(CrawlSpider):
         item['ISBN'] = ISBN
         item['ISBN13'] = ISBN13
 
-        ASIN = response.xpath('//div[contains(text(),"ASIN")]/parent::*[1]//div[2]//text()').get()
+        ASIN = response.xpath('//div[contains(text(),"ASIN")]/parent::*//div[@itemprop="isbn"]//text()').get()
         item['ASIN'] = ASIN
 
         item['url'] = response.url
