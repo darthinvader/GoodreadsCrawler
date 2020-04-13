@@ -14,7 +14,8 @@ BOT_NAME = 'goodreads'
 SPIDER_MODULES = ['goodreads.spiders']
 NEWSPIDER_MODULE = 'goodreads.spiders'
 
-
+CONCURRENT_REQUESTS = 100
+CONCURRENT_ITEMS = 300
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'goodreads (+http://www.yourdomain.com)'
 
@@ -92,4 +93,4 @@ LOG_LEVEL = 'INFO'
 ITEM_PIPELINES = {
     'goodreads.pipelines.JsonWriterPipeline': 100,
 }
-JOBDIR = 'goodreads_save'
+# JOBDIR = 'goodreads_save'
